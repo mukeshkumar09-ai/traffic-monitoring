@@ -113,6 +113,7 @@ langgraph-checkpoint==4.1.1
 langgraph-prebuilt==1.1.0
 langgraph-sdk==0.3.15
 langsmith==0.8.7
+lap==0.5.13
 libclang==18.1.1
 Markdown==3.7
 markdown-it-py==3.0.0
@@ -181,6 +182,7 @@ pydantic-extra-types==2.11.1
 pydantic-settings==2.14.1
 pydantic_core==2.46.0
 pydeck==0.9.1
+pyDeprecate==0.7.0
 pyee==13.0.1
 PyGetWindow==0.0.9
 Pygments==2.18.0
@@ -234,6 +236,7 @@ SQLAlchemy==2.0.50
 stack-data==0.6.3
 starlette==1.0.0
 streamlit==1.45.0
+supervision==0.28.0
 sympy==1.14.0
 tenacity==9.1.2
 tensorboard==2.18.0
