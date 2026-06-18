@@ -98,8 +98,14 @@ def latest_count():
     }
 
 
-@app.get("/status")
-def traffic_status():
+    if vehicle_count < 20:
+       status = "🟢 Low"
+
+    elif vehicle_count < 50:
+       status = "🟡 Moderate"
+
+    else:
+      status = "🔴 Heavy"
 
     db = SessionLocal()
 
@@ -128,4 +134,67 @@ def traffic_status():
     return {
         "vehicle_count": vehicle_count,
         "traffic_status": status
+    }
+@app.get("/status")
+def traffic_status():
+
+    db = SessionLocal()
+
+    latest = (
+        db.query(Traffic)
+        .order_by(Traffic.id.desc())
+        .first()
+    )
+
+    db.close()
+
+    if latest is None:
+        return {
+            "message": "No data found"
+        }
+
+    vehicle_count = latest.vehicle_count
+
+    if vehicle_count < 20:
+        status = "🟢 Low"
+    elif vehicle_count < 50:
+        status = "🟡 Moderate"
+    else:
+        status = "🔴 Heavy"
+
+    return {
+        "vehicle_count": vehicle_count,
+        "traffic_status": status
+    }
+@app.get("/analytics")
+def analytics():
+
+    db = SessionLocal()
+
+    records = db.query(Traffic).all()
+
+    db.close()
+
+    if len(records) == 0:
+        return {
+            "peak_traffic": 0,
+            "average_traffic": 0,
+            "total_records": 0
+        }
+
+    counts = [r.vehicle_count for r in records]
+
+    peak_traffic = max(counts)
+
+    average_traffic = round(
+        sum(counts) / len(counts),
+        2
+    )
+
+    total_records = len(records)
+
+    return {
+        "peak_traffic": peak_traffic,
+        "average_traffic": average_traffic,
+        "total_records": total_records
     }

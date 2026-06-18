@@ -1,3 +1,5 @@
+import json
+import paho.mqtt.client as mqtt
 from ultralytics import YOLO
 import cv2
 
@@ -18,6 +20,19 @@ counted_ids = set()
 
 # Total Vehicle Count
 vehicle_count = 0
+broker = "broker.hivemq.com"
+port = 1883
+topic = "traffic-monitoring/mukesh2025"
+
+client = mqtt.Client()
+
+client.connect(
+    broker,
+    port,
+    60
+)
+
+print("MQTT Connected")
 
 while True:
     ret, frame = cap.read()
@@ -72,6 +87,17 @@ while True:
 
                     counted_ids.add(track_id)
                     vehicle_count += 1
+                    message = {
+                    "camera_id": "CAM01",
+                    "vehicle_count": vehicle_count
+                    }
+
+                    client.publish(
+                        topic,
+                        json.dumps(message)
+                    )
+
+                    print("Published:", message)
 
                     print(
                         f"Vehicle Count = {vehicle_count} | "

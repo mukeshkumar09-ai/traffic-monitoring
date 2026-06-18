@@ -2,90 +2,330 @@ import { useEffect, useState } from "react";
 import API from "./api";
 import TrafficChart from "./components/TrafficChart";
 
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
+} from "@mui/material";
+
 function App() {
+
   const [count, setCount] = useState(0);
   const [status, setStatus] = useState("");
   const [history, setHistory] = useState([]);
 
+  const [peakTraffic, setPeakTraffic] = useState(0);
+  const [averageTraffic, setAverageTraffic] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const [lastUpdated, setLastUpdated] = useState("");
+
   useEffect(() => {
+
     fetchData();
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
+
   }, []);
 
   const fetchData = async () => {
+
     try {
+
       const latest = await API.get("/latest");
-      console.log("LATEST:", latest.data);
-
       const trafficStatus = await API.get("/status");
-      console.log("STATUS:", trafficStatus.data);
-
       const historyData = await API.get("/history");
-      console.log("HISTORY:", historyData.data);
+      const analytics = await API.get("/analytics");
 
       setCount(latest.data.vehicle_count);
-      setStatus(trafficStatus.data.traffic_status);
+
+      setStatus(
+        trafficStatus.data.traffic_status
+      );
+
       setHistory(historyData.data);
+
+      setPeakTraffic(
+        analytics.data.peak_traffic
+      );
+
+      setAverageTraffic(
+        analytics.data.average_traffic
+      );
+
+      setTotalRecords(
+        analytics.data.total_records
+      );
+
+      setLastUpdated(
+        new Date().toLocaleTimeString()
+      );
+
     } catch (error) {
-      console.log("ERROR:", error);
+
+      console.log("Error:", error);
+
     }
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>🚦 Smart Traffic Monitoring Dashboard</h1>
+    <>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6">
+            🚦 Smart Traffic Monitoring System
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-      {/* Dashboard Cards */}
-      <div
-        style={{
-          display: "flex",
-          gap: "40px",
-          marginBottom: "30px",
-          marginTop: "20px",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #ccc",
-            padding: "20px",
-            borderRadius: "10px",
-            minWidth: "200px",
+      <Container sx={{ mt: 2 }}>
+
+        <Typography
+          variant="body2"
+          sx={{
+            textAlign: "right",
+            mb: 2,
+            color: "gray",
           }}
         >
-          <h3>Vehicle Count</h3>
-          <h1>{count}</h1>
-        </div>
+          Last Updated: {lastUpdated}
+        </Typography>
 
-        <div
-          style={{
-            border: "1px solid #ccc",
-            padding: "20px",
-            borderRadius: "10px",
-            minWidth: "200px",
-          }}
+        {/* Top Cards */}
+
+        <Grid container spacing={3}>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  Vehicle Count
+                </Typography>
+
+                <Typography variant="h3">
+                  {count}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  Traffic Status
+                </Typography>
+
+                <Typography variant="h4">
+                  {status}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  Active Cameras
+                </Typography>
+
+                <Typography variant="h3">
+                  1
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+        </Grid>
+
+        {/* Analytics Cards */}
+
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  📈 Peak Traffic
+                </Typography>
+
+                <Typography variant="h4">
+                  {peakTraffic}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  📊 Average Traffic
+                </Typography>
+
+                <Typography variant="h4">
+                  {averageTraffic}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">
+                  📋 Total Records
+                </Typography>
+
+                <Typography variant="h4">
+                  {totalRecords}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+        </Grid>
+
+        {/* Graph */}
+
+        <Typography
+          variant="h5"
+          sx={{ mt: 5, mb: 2 }}
         >
-          <h3>Traffic Status</h3>
-          <h1>{status}</h1>
-        </div>
-      </div>
+          📊 Traffic Analytics
+        </Typography>
 
-      {/* Analytics Chart */}
-      <h2>📊 Traffic Analytics</h2>
+        <TrafficChart history={history} />
 
-      <TrafficChart history={history} />
+        {/* Smart Alerts */}
 
-      {/* History Section */}
-      <h2 style={{ marginTop: "40px" }}>📜 Traffic History</h2>
+        <Typography
+          variant="h5"
+          sx={{ mt: 5, mb: 2 }}
+        >
+          🚨 Smart Alerts
+        </Typography>
 
-      <ul>
-        {history.map((item) => (
-          <li key={item.id}>
-            Vehicle Count: {item.vehicle_count}
-            {" | "}
-            {item.timestamp}
-          </li>
-        ))}
-      </ul>
-    </div>
+        {count > averageTraffic * 1.5 ? (
+
+          <Card
+            sx={{
+              backgroundColor: "#ffebee",
+              borderLeft: "6px solid red",
+              mb: 3,
+            }}
+          >
+            <CardContent>
+
+              <Typography variant="h6">
+                🚨 Traffic Spike Detected
+              </Typography>
+
+              <Typography>
+                Current Count: {count}
+              </Typography>
+
+              <Typography>
+                Average Traffic: {averageTraffic}
+              </Typography>
+
+              <Typography>
+                Status: {status}
+              </Typography>
+
+            </CardContent>
+          </Card>
+
+        ) : (
+
+          <Card
+            sx={{
+              backgroundColor: "#e8f5e9",
+              borderLeft: "6px solid green",
+              mb: 3,
+            }}
+          >
+            <CardContent>
+
+              <Typography variant="h6">
+                ✅ Traffic Normal
+              </Typography>
+
+              <Typography>
+                Current Count: {count}
+              </Typography>
+
+            </CardContent>
+          </Card>
+
+        )}
+
+        {/* History */}
+
+        <Typography
+          variant="h5"
+          sx={{ mt: 5, mb: 2 }}
+        >
+          📜 Traffic History
+        </Typography>
+
+        <Paper>
+
+          <Table>
+
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Vehicle Count</TableCell>
+                <TableCell>Timestamp</TableCell>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+
+              {history.map((item) => (
+
+                <TableRow key={item.id}>
+
+                  <TableCell>
+                    {item.id}
+                  </TableCell>
+
+                  <TableCell>
+                    {item.vehicle_count}
+                  </TableCell>
+
+                  <TableCell>
+                    {item.timestamp}
+                  </TableCell>
+
+                </TableRow>
+
+              ))}
+
+            </TableBody>
+
+          </Table>
+
+        </Paper>
+
+      </Container>
+    </>
   );
 }
 
