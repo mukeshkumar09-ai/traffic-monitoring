@@ -53,18 +53,28 @@ def add_traffic(count: int):
     }
 
 
+from typing import Optional
+
 @app.get("/history")
-def get_history():
+def get_history(camera_id: Optional[str] = None):
 
     db = SessionLocal()
 
-    records = db.query(Traffic).all()
+    query = db.query(Traffic)
+
+    if camera_id and camera_id != "ALL":
+        query = query.filter(
+            Traffic.camera_id == camera_id
+        )
+
+    records = query.all()
 
     result = []
 
     for row in records:
         result.append({
             "id": row.id,
+            "camera_id": row.camera_id,
             "vehicle_count": row.vehicle_count,
             "timestamp": row.timestamp
         })
@@ -167,11 +177,18 @@ def traffic_status():
         "traffic_status": status
     }
 @app.get("/analytics")
-def analytics():
+def analytics(camera_id: Optional[str] = None):
 
     db = SessionLocal()
 
-    records = db.query(Traffic).all()
+    query = db.query(Traffic)
+
+    if camera_id and camera_id != "ALL":
+        query = query.filter(
+            Traffic.camera_id == camera_id
+        )
+
+    records = query.all()
 
     db.close()
 
@@ -182,7 +199,10 @@ def analytics():
             "total_records": 0
         }
 
-    counts = [r.vehicle_count for r in records]
+    counts = [
+        r.vehicle_count
+        for r in records
+    ]
 
     peak_traffic = max(counts)
 
@@ -198,3 +218,121 @@ def analytics():
         "average_traffic": average_traffic,
         "total_records": total_records
     }
+
+
+@app.get("/peak-hour")
+def peak_hour():
+
+    db = SessionLocal()
+
+    records = db.query(Traffic).all()
+
+    db.close()
+
+    if not records:
+        return {
+            "peak_hour": "No Data"
+        }
+
+    hour_counts = {}
+
+    for record in records:
+
+        hour = record.timestamp.hour
+
+        if hour not in hour_counts:
+            hour_counts[hour] = []
+
+        hour_counts[hour].append(
+            record.vehicle_count
+        )
+
+    peak_hour = max(
+        hour_counts,
+        key=lambda h: sum(hour_counts[h]) /
+        len(hour_counts[h])
+    )
+
+    return {
+        "peak_hour": f"{peak_hour}:00 - {peak_hour+1}:00"
+    }
+@app.get("/trend")
+def traffic_trend():
+
+    db = SessionLocal()
+
+    records = (
+        db.query(Traffic)
+        .order_by(Traffic.id.desc())
+        .limit(10)
+        .all()
+    )
+
+    db.close()
+
+    if len(records) < 10:
+        return {
+            "trend": "Insufficient Data"
+        }
+
+    records.reverse()
+
+    first_half = records[:5]
+    second_half = records[5:]
+
+    avg_first = sum(
+        r.vehicle_count for r in first_half
+    ) / 5
+
+    avg_second = sum(
+        r.vehicle_count for r in second_half
+    ) / 5
+
+    if avg_second > avg_first:
+        trend = "📈 Increasing"
+    else:
+        trend = "📉 Decreasing"
+
+    return {
+        "trend": trend
+    }
+@app.get("/cameras")
+def get_cameras():
+
+    db = SessionLocal()
+
+    cameras = (
+        db.query(Traffic.camera_id)
+        .distinct()
+        .all()
+    )
+
+    db.close()
+
+    return [camera[0] for camera in cameras]
+
+
+@app.get("/camera/{camera_id}")
+def get_camera_data(camera_id: str):
+
+    db = SessionLocal()
+
+    records = (
+        db.query(Traffic)
+        .filter(Traffic.camera_id == camera_id)
+        .all()
+    )
+
+    db.close()
+
+    result = []
+
+    for row in records:
+        result.append({
+            "id": row.id,
+            "camera_id": row.camera_id,
+            "vehicle_count": row.vehicle_count,
+            "timestamp": row.timestamp
+        })
+
+    return result

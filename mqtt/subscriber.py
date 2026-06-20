@@ -30,17 +30,21 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
+
     print("RAW:", msg.payload.decode())
 
     payload = json.loads(
         msg.payload.decode()
     )
 
+    camera_id = payload["camera_id"]
+
     count = payload["vehicle_count"]
 
     db = SessionLocal()
 
     traffic = Traffic(
+        camera_id=camera_id,
         vehicle_count=count
     )
 
@@ -51,7 +55,7 @@ def on_message(client, userdata, msg):
     db.close()
 
     print(
-        f"Stored Count: {count}"
+        f"Stored -> Camera: {camera_id} | Count: {count}"
     )
 
 

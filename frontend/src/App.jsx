@@ -16,6 +16,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 
 function App() {
@@ -23,24 +27,28 @@ function App() {
   const [count, setCount] = useState(0);
   const [status, setStatus] = useState("");
   const [history, setHistory] = useState([]);
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState("ALL");
 
   const [peakTraffic, setPeakTraffic] = useState(0);
   const [averageTraffic, setAverageTraffic] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [peakHour, setPeakHour] = useState("");
+  const [trend, setTrend] = useState("");
 
   const [lastUpdated, setLastUpdated] = useState("");
 
   useEffect(() => {
 
+  fetchData();
+
+  const interval = setInterval(() => {
     fetchData();
+  }, 5000);
 
-    const interval = setInterval(() => {
-      fetchData();
-    }, 5000);
+  return () => clearInterval(interval);
 
-    return () => clearInterval(interval);
-
-  }, []);
+}, [selectedCamera]);
 
   const fetchData = async () => {
 
@@ -48,8 +56,17 @@ function App() {
 
       const latest = await API.get("/latest");
       const trafficStatus = await API.get("/status");
-      const historyData = await API.get("/history");
-      const analytics = await API.get("/analytics");
+      const historyData = await API.get(
+        `/history?camera_id=${selectedCamera}`
+      );
+      const analytics = await API.get(
+        `/analytics?camera_id=${selectedCamera}`
+      );
+      const peakHourData = await API.get("/peak-hour");
+      const trendData = await API.get("/trend");
+      const camerasData = await API.get("/cameras");
+
+      setCameras(camerasData.data);
 
       setCount(latest.data.vehicle_count);
 
@@ -71,9 +88,17 @@ function App() {
         analytics.data.total_records
       );
 
+      setPeakHour(
+        peakHourData.data.peak_hour
+      );
+      setTrend(
+       trendData.data.trend
+      );  
+
       setLastUpdated(
         new Date().toLocaleTimeString()
       );
+      
 
     } catch (error) {
 
@@ -103,6 +128,39 @@ function App() {
           }}
         >
           Last Updated: {lastUpdated}
+          <FormControl
+            fullWidth
+            sx={{ mb: 3 }}
+          >
+
+            <InputLabel>
+              Select Camera
+            </InputLabel>
+
+            <Select
+              value={selectedCamera}
+              label="Select Camera"
+              onChange={(e) =>
+                setSelectedCamera(e.target.value)
+              }
+            >
+
+              <MenuItem value="ALL">
+                All Cameras
+              </MenuItem>
+
+              {cameras.map((camera) => (
+                <MenuItem
+                  key={camera}
+                  value={camera}
+                >
+                  {camera}
+                </MenuItem>
+              ))}
+
+            </Select>
+
+          </FormControl>
         </Typography>
 
         {/* Top Cards */}
@@ -145,7 +203,9 @@ function App() {
                 </Typography>
 
                 <Typography variant="h3">
-                  1
+                  {selectedCamera === "ALL"
+                    ? cameras.length
+                    : 1}
                 </Typography>
               </CardContent>
             </Card>
@@ -200,6 +260,66 @@ function App() {
           </Grid>
 
         </Grid>
+
+        {/* Peak Hour */}
+
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+
+          <Grid item xs={12} md={4}>
+            <Card>
+            <CardContent>
+            <Typography variant="h6">
+               🕒 Peak Hour
+            </Typography>
+            <Typography variant="h5">
+              {peakHour}
+            </Typography>
+            </CardContent>
+            </Card>
+        </Grid>
+          <Grid item xs={12} md={4}>
+            <Card>
+            <CardContent>
+            <Typography variant="h6">
+               🚨 Alert Status
+            </Typography>
+            <Typography variant="h5">
+              {count > averageTraffic * 1.5
+               ? "Traffic Spike"
+               : "Normal"}
+            </Typography>
+            </CardContent>
+            </Card>
+
+          </Grid>
+            <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">
+                      📡 System Status
+                    </Typography>
+                <Typography variant="h5">
+                  Online
+                </Typography>
+              </CardContent>
+            </Card>
+
+              </Grid>
+
+            </Grid>
+              <Grid item xs={12} md={4}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6">
+                      📈 Traffic Trend
+                    </Typography>
+
+                    <Typography variant="h5">
+                      {trend}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
 
         {/* Graph */}
 
