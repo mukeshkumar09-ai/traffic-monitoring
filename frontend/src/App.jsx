@@ -20,7 +20,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-} from "@mui/material";
+  Button
+} 
+from "@mui/material";
 
 function App() {
 
@@ -37,6 +39,7 @@ function App() {
   const [trend, setTrend] = useState("");
 
   const [lastUpdated, setLastUpdated] = useState("");
+  const [violations, setViolations] = useState([]);
 
   useEffect(() => {
 
@@ -61,6 +64,12 @@ function App() {
       );
       const analytics = await API.get(
         `/analytics?camera_id=${selectedCamera}`
+      );
+      const violationsData =
+        await API.get("/violations");
+
+      setViolations(
+        violationsData.data
       );
       const peakHourData = await API.get("/peak-hour");
       const trendData = await API.get("/trend");
@@ -338,7 +347,7 @@ function App() {
           variant="h5"
           sx={{ mt: 5, mb: 2 }}
         >
-          🚨 Smart Alerts
+          🚨 Smart Alerts 
         </Typography>
 
         {count > averageTraffic * 1.5 ? (
@@ -395,6 +404,96 @@ function App() {
 
         )}
 
+
+        <Typography
+  variant="h5"
+  sx={{ mt: 5, mb: 2 }}
+>
+  🚨 Recent Violations
+</Typography>
+
+<Paper sx={{ mb: 4 }}>
+
+  <Table>
+
+    <TableHead>
+      <TableRow>
+        <TableCell>ID</TableCell>
+        <TableCell>Camera</TableCell>
+        <TableCell>Violation</TableCell>
+        <TableCell>Evidence</TableCell>
+        <TableCell>Timestamp</TableCell>
+        <TableCell>Action</TableCell>
+      </TableRow>
+    </TableHead>
+
+    <TableBody>
+
+  {violations.map((item) => (
+
+    <TableRow key={item.id}>
+
+      <TableCell>
+        {item.id}
+      </TableCell>
+
+      <TableCell>
+        {item.camera_id}
+      </TableCell>
+
+      <TableCell>
+        {item.violation_type}
+      </TableCell>
+
+      <TableCell>
+
+        <img
+          src={`http://127.0.0.1:8000/evidence/${item.image_path}`}
+          alt="evidence"
+          width="80"
+          height="50"
+          style={{
+            borderRadius: "5px",
+            objectFit: "cover"
+          }}
+        />
+
+      </TableCell>
+
+      <TableCell>
+        {item.timestamp}
+      </TableCell>
+
+      <TableCell>
+
+        <Button
+          variant="contained"
+          size="small"
+          onClick={() =>
+            window.open(
+              `http://127.0.0.1:8000/evidence/${item.image_path}`,
+              "_blank"
+            )
+          }
+        >
+          Open
+        </Button>
+
+      </TableCell>
+
+    </TableRow>
+
+  ))}
+
+</TableBody>
+
+  </Table>
+
+</Paper>
+
+
+
+
         {/* History */}
 
         <Typography
@@ -413,6 +512,7 @@ function App() {
                 <TableCell>ID</TableCell>
                 <TableCell>Vehicle Count</TableCell>
                 <TableCell>Timestamp</TableCell>
+                <TableCell>Evidence</TableCell>
               </TableRow>
             </TableHead>
 

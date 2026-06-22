@@ -1,8 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 from backend.database import engine, SessionLocal
-from backend.models import Base, Traffic
+from backend.models import (
+    Base,
+    Traffic,
+    Violation
+)
 
 # Create Tables
 Base.metadata.create_all(bind=engine)
@@ -11,6 +15,11 @@ app = FastAPI(
     title="Edge Smart Traffic Monitoring API",
     description="Vehicle Detection, Tracking and Counting System",
     version="1.0.0"
+)
+app.mount(
+    "/evidence",
+    StaticFiles(directory="evidence"),
+    name="evidence"
 )
 
 # CORS
@@ -336,3 +345,61 @@ def get_camera_data(camera_id: str):
         })
 
     return result
+# ==========================
+# GET ALL VIOLATIONS
+# ==========================
+
+@app.get("/violations")
+def get_violations():
+
+    db = SessionLocal()
+
+    violations = (
+        db.query(Violation)
+        .order_by(
+            Violation.id.desc()
+        )
+        .all()
+    )
+
+    db.close()
+
+    result = []
+
+    for row in violations:
+
+        result.append({
+            "id": row.id,
+            "camera_id": row.camera_id,
+            "violation_type": row.violation_type,
+            "image_path": row.image_path,
+            "timestamp": row.timestamp
+        })
+
+    return result
+# ==========================
+# ADD TEST VIOLATION
+# ==========================
+
+@app.post("/add-violation")
+def add_violation():
+
+    db = SessionLocal()
+
+    violation = Violation(
+        camera_id="CAM01",
+        violation_type="No Helmet",
+        image_path="vehicle_35.jpg"
+    )
+
+    db.add(violation)
+
+    db.commit()
+
+    db.refresh(violation)
+
+    db.close()
+
+    return {
+        "message": "Violation Added"
+    }

@@ -7,7 +7,10 @@ import cv2
 model = YOLO("yolov8n.pt")
 
 # Open Video
-cap = cv2.VideoCapture("videos/traffic.mp4")
+cap = cv2.VideoCapture("videos/traffic1.mp4")
+if not cap.isOpened():
+    print("Video not found!")
+    exit()
 
 # Counting Line Position
 line_y = 800
@@ -87,9 +90,24 @@ while True:
 
                     counted_ids.add(track_id)
                     vehicle_count += 1
+
+                    # Save Evidence Image
+                    filename = (
+                        f"evidence/vehicle_{track_id}.jpg"
+                    )
+
+                    cv2.imwrite(
+                        filename,
+                        frame
+                    )
+
+                    print(
+                        f"Evidence Saved: {filename}"
+                    )
+
                     message = {
-                    "camera_id": "CAM01",
-                    "vehicle_count": vehicle_count
+                        "camera_id": "CAM01",
+                        "vehicle_count": vehicle_count
                     }
 
                     client.publish(
